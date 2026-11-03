@@ -1,8 +1,8 @@
 # EmProx
-A small, self-hosted, **allowlisted** web page viewer/proxy built with Node.js. First MVP for Render.
+A small, self-hosted, **allowlisted** web page viewer/proxy built with Node.js. Version 0.2 for Render, with a violet/purple interface and an about:blank tab wrapper.
 
 ## Features
-- Clean browser-style UI with address bar and embedded page viewer
+- Violet-themed browser UI with address bar, embedded page viewer, reload and close controls\n- Open the permitted page inside an `about:blank` popup tab (popup permission may be required; this does not bypass destination allowlists or site security)
 - Proxies server-rendered HTML, images, fonts and stylesheets from permitted sites
 - Rewrites navigation links and asset URLs to stay within EmProx
 - Restricts upstream destinations to an explicit hostname allowlist
@@ -35,7 +35,7 @@ Open http://localhost:3000
 ## Security notes
 This proxy is deliberately *not* an unrestricted anonymizing proxy or a tool for bypassing site access controls. Do not add localhost, private IPs, or untrusted domains to `ALLOWED_HOSTS`. The service does not send user credentials upstream; the content is fetched by the server and sanitized before display. The server does not persist browsing history. Upstream sites see the server's IP rather than the visitor's IP. Deploy only in compliance with Render and destination-site rules.
 
-## Next milestones
+## Troubleshooting\n- If Go appears to fail, check the status text beneath the address bar and the message rendered inside the page viewer.\n- By default only `example.com` and `example.org` work. Set `ALLOWED_HOSTS` in Render to permit additional hostnames. Redeploy after editing environment settings.\n- If the about:blank button does not open a tab, allow popups for the EmProx origin. It creates a same-origin, restricted viewer in a new blank tab.\n- Interactive websites do not work with this MVP; no site JavaScript executes.\n\n## Next milestones
 - Better renderer compatibility, tests for redirects and hostile markup
 - Authentication and rate limits for public hosting
 - Favorites/history stored locally on the frontend

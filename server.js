@@ -103,11 +103,25 @@ function rewriteHtml(source, base) {
   return $.html();
 }
 
+function errorPage(message) {
+  const safe=String(message).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  return '<!doctype html><html><head><meta charset="utf-8"><title>EmProx — Page error</title></head>'+
+    '<body style="font:16px system-ui;padding:2rem;color:#241333;background:#f9f4fd">'+
+    '<h2>EmProx could not open this page</h2><p>'+safe+'</p>'+
+    '<p>This viewer only supports permitted public HTML sites, and does not run site JavaScript.</p></body></html>';
+}
+
 function staticFile(res, filename) {
   const filepath=path.join(root,filename);
   fs.readFile(filepath,(err,contents)=> err
     ? send(res,404,'Not found')
     : send(res,200,contents,mime[path.extname(filename)] || 'application/octet-stream'));
+}
+
+function incomingErrorBody(req,message){
+  try { const url=new URL(req.url,'http://localhost'); if(url.pathname==='/browse')return errorPage(message); }
+  catch {}
+  return errorPage(message);
 }
 
 const server = http.createServer(async (req,res) => {
@@ -141,7 +155,7 @@ const server = http.createServer(async (req,res) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Proxy error';
     const rejected=/allowlist|URL|HTTP\(S\)|ports|Credentials|Host/.test(message);
-    send(res,rejected?400:502,message,undefined,true);
+    send(res,rejected?400:502,incomingErrorBody(req,message), 'text/html; charset=utf-8',true);
   }
 });
 server.listen(port,'0.0.0.0',()=>console.log('EmProx listening on',port));

@@ -1,17 +1,42 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>EmProx — Web Viewer</title><link rel="stylesheet" href="/style.css"></head>
-<body><main class="shell">
-  <header><div class="brand"><div class="logo">e<span>m</span></div><div><strong>EmProx</strong><small>Lightweight web viewer · v0.1</small></div></div><span class="status"><i></i> Ready</span></header>
-  <section class="toolbar"><form id="navigate"><label for="url" class="sr-only">Website URL</label>
-   <button type="button" id="home" title="Home">⌂</button>
-   <input id="url" type="url" placeholder="https://example.org" value="https://example.org" required autocomplete="url" spellcheck="false">
-   <button type="submit" class="go">Go <span>↗</span></button>
-  </form></section>
-  <section id="welcome" class="welcome"><div class="orb">◈</div><p class="eyebrow">THE LIGHTER WAY TO BROWSE</p>
-  <h1>Welcome to <em>EmProx.</em></h1><p>Enter an allowed website URL above to view its pages through your own server.</p>
-  <div class="info" id="hosts">Loading permitted websites…</div></section>
-  <section id="viewport" class="viewport hidden"><div class="viewer-head"><span id="current">Page preview</span><button type="button" id="close">✕ Close</button></div>
-   <iframe id="page" title="Proxied page" referrerpolicy="no-referrer" sandbox="allow-same-origin"></iframe></section>
-  <footer><span>EmProx is a restricted, server-side HTML viewer.</span><span>Built for Render · No tracking</span></footer>
-</main><script src="/app.js"></script></body></html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#160b28">
+<title>EmProx — Web Viewer</title><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main class="shell">
+<header class="header">
+  <div class="brand"><div class="logo">em<span>.</span></div><div><strong>EmProx</strong><small>Browser · v0.2</small></div></div>
+  <span class="status"><i></i> Online</span>
+</header>
+<section class="toolbar" aria-label="Browser controls">
+  <form id="navigate">
+    <button type="button" id="home" title="Home" aria-label="Home">⌂</button>
+    <label for="url" class="sr-only">Website URL</label>
+    <input id="url" type="text" inputmode="url" placeholder="Enter a permitted site (e.g. example.org)" value="https://example.org" required spellcheck="false" autocomplete="url">
+    <button type="submit" class="go">Go <span>→</span></button>
+  </form>
+  <div class="actions">
+    <button type="button" id="newtab">↗ Open in about:blank</button>
+    <button type="button" id="reload">↻ Reload</button>
+    <span id="message" role="status" aria-live="polite">Ready to browse</span>
+  </div>
+</section>
+<section id="welcome" class="welcome">
+  <div class="orb" aria-hidden="true">✦</div>
+  <p class="eyebrow">YOUR LITTLE CORNER OF THE WEB</p>
+  <h1>Meet <em>EmProx.</em></h1>
+  <p>A lightweight, self-hosted web viewer. Browse permitted public pages in a clean new look.</p>
+  <div class="info" id="hosts">Loading permitted websites…</div>
+  <p class="note">This MVP displays static HTML, stylesheets and images. Interactive websites, sign-ins and scripts aren't supported yet.</p>
+</section>
+<section id="viewport" class="viewport hidden">
+  <div class="viewer-head"><span id="current">Page preview</span><button type="button" id="close">✕ Close</button></div>
+  <iframe id="page" title="Proxied page" referrerpolicy="no-referrer" sandbox="allow-same-origin"></iframe>
+</section>
+<footer><span>EmProx · Restricted web viewer</span><span>Made for Render</span></footer>
+</main>
+<script src="/app.js"></script>
+</body></html>
