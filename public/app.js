@@ -6,7 +6,7 @@ const frame=document.querySelector('#page');
 const current=document.querySelector('#current');
 const status=document.querySelector('#message');
 let lastUrl=null;
-let hosts=[];
+let blockedHosts=[];
 
 function message(text,isError=false){status.textContent=text;status.classList.toggle('error',isError);}
 function parseInput(){
@@ -17,8 +17,9 @@ function parseInput(){
   try{url=new URL(raw);}catch{throw new Error('Invalid website URL.');}
   if(!['https:','http:'].includes(url.protocol)||url.username||url.password)
     throw new Error('Only regular HTTP(S) URLs are supported.');
-  if(hosts.length&&!hosts.includes(url.hostname.toLowerCase()))
-    throw new Error(url.hostname+' is not on the allowed hosts list. Change ALLOWED_HOSTS in Render.');
+  const host=url.hostname.toLowerCase();
+  if(blockedHosts.some(domain=>host===domain||host.endsWith('.'+domain)))
+    throw new Error('This domain is blocked by EmProx settings.');
   return url;
 }
 function viewerUrl(url){return '/browse?url='+encodeURIComponent(url.href);}
@@ -70,9 +71,9 @@ document.querySelector('#reload').addEventListener('click',()=>{
 document.querySelector('#newtab').addEventListener('click',openBlank);
 frame.addEventListener('load',()=>{if(frame.getAttribute('src'))message('Page loaded. Some websites require scripts that this viewer does not run.');});
 fetch('/config').then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{
-  hosts=data.allowedHosts||[];
-  document.querySelector('#hosts').textContent='Allowed hosts: '+hosts.join(', ');
+  blockedHosts=data.blockedHosts||[];
+  document.querySelector('#hosts').textContent='Public websites are enabled. Adult/gore domain filtering is best-effort.';
 }).catch(()=>{
-  document.querySelector('#hosts').textContent='Could not load allowed hosts.';
+  document.querySelector('#hosts').textContent='Could not load content filtering settings.';
   message('Configuration unavailable.',true);
 });

@@ -9,5 +9,5 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: ALLOWED_HOSTS
-        value: example.com,example.org
+      - key: BLOCKED_HOSTS
+        value: ''

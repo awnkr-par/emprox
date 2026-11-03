@@ -4,12 +4,28 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { load } from 'cheerio';
-import { allowedHosts, parseTarget, safeLookup } from './lib/targets.js';
+import { blockedHosts, parseTarget, safeLookup } from './lib/targets.js';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), 'public');
 const port = Number(process.env.PORT || 3000);
 const maxBytes = Math.min(Number(process.env.MAX_BYTES) || 2097152, 10485760);
 const timeout = Math.min(Number(process.env.REQUEST_TIMEOUT_MS) || 10000, 30000);
+const rateLimitWindow = 60_000;
+const maxRequestsPerMinute = 50;
+const hits = new Map();
+function limited(req) {
+  // No forwarding headers: only trust the immediate network peer.
+  const key = req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  if (hits.size > 5000) for (const [ip, record] of hits)
+    if (now - record.started > rateLimitWindow) hits.delete(ip);
+  const record = hits.get(key);
+  if (!record || now - record.started > rateLimitWindow) {
+    hits.set(key, { started: now, count: 1 }); return false;
+  }
+  record.count += 1;
+  return record.count > maxRequestsPerMinute;
+}
 const mime = { '.html':'text/html; charset=utf-8', '.css':'text/css; charset=utf-8',
   '.js':'application/javascript; charset=utf-8', '.svg':'image/svg+xml', '.png':'image/png' };
 const uiCsp = "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:; frame-src 'self'; object-src 'none'; base-uri 'none'";
@@ -108,7 +124,7 @@ function errorPage(message) {
   return '<!doctype html><html><head><meta charset="utf-8"><title>EmProx — Page error</title></head>'+
     '<body style="font:16px system-ui;padding:2rem;color:#241333;background:#f9f4fd">'+
     '<h2>EmProx could not open this page</h2><p>'+safe+'</p>'+
-    '<p>This viewer only supports permitted public HTML sites, and does not run site JavaScript.</p></body></html>';
+    '<p>This viewer only supports public HTML sites not blocked by its content settings, and does not run site JavaScript.</p></body></html>';
 }
 
 function staticFile(res, filename) {
@@ -130,12 +146,13 @@ const server = http.createServer(async (req,res) => {
     const incoming = new URL(req.url, 'http://localhost');
     if (incoming.pathname === '/healthz') return send(res,200,'ok');
     if (incoming.pathname === '/config') return send(res,200,
-      JSON.stringify({ allowedHosts:allowedHosts() }), 'application/json; charset=utf-8');
+      JSON.stringify({ blockedHosts:blockedHosts(), publicSites:true }), 'application/json; charset=utf-8');
     if (incoming.pathname === '/') return staticFile(res,'index.html');
     if (incoming.pathname === '/style.css') return staticFile(res,'style.css');
     if (incoming.pathname === '/app.js') return staticFile(res,'app.js');
     if (incoming.pathname !== '/browse' && incoming.pathname !== '/asset')
       return send(res,404,'Not found');
+    if (limited(req)) return send(res,429,'Request limit reached. Try again shortly.');
     if (!incoming.searchParams.has('url')) return send(res,400,'Missing url');
     const result = await fetchAllowed(incoming.searchParams.get('url'));
     const type = (result.headers['content-type'] || '').split(';')[0].toLowerCase();

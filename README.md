@@ -1,42 +1,32 @@
 # EmProx
-A small, self-hosted, **allowlisted** web page viewer/proxy built with Node.js. Version 0.2 for Render, with a violet/purple interface and an about:blank tab wrapper.
 
-## Features
-- Violet-themed browser UI with address bar, embedded page viewer, reload and close controls\n- Open the permitted page inside an `about:blank` popup tab (popup permission may be required; this does not bypass destination allowlists or site security)
-- Proxies server-rendered HTML, images, fonts and stylesheets from permitted sites
-- Rewrites navigation links and asset URLs to stay within EmProx
-- Restricts upstream destinations to an explicit hostname allowlist
-- Rejects local/private network addresses, oversized responses, unsafe schemes and unapproved redirects
-- Has no cookie forwarding, script execution, login support, or open-proxy mode
+Self-hosted lightweight HTML page viewer for Render. Version 0.3.0.
 
-**Limitations:** This is an intentionally limited HTML viewer, not a full browser. JavaScript-heavy sites, authentication, media streams, dynamic apps and sites with complex security policies will not work.
+## What works
+- Violet browser UI with Go, Reload, Home, Close, and an about:blank wrapper tab.
+- Public HTTP(S) website hostnames are allowed by default; the old two-host allowlist is removed.
+- Static HTML, stylesheets, images and fonts are proxied; navigation and asset links are rewritten.
+- Domain denylist via `BLOCKED_HOSTS`, plus a limited adult/gore-themed hostname keyword screen.
+- Defense-in-depth: DNS-based private address rejection, IP-literal blocking, redirect validation, response size and timeout limits, and a basic per-IP rate limit.
 
-## Deploy to Render
-1. Connect this repository on [Render](https://dashboard.render.com/).
-2. Choose **New > Web Service** (NOT Static Site). The checked-in `render.yaml` also supports Blueprint deployment.
-3. Runtime: Node; build: `npm install`; start: `npm start`.
-4. Configure `ALLOWED_HOSTS` with comma-separated **trusted public** hostnames you want to permit. Default: `example.com,example.org`. Wildcards are not accepted.
-5. Deploy. Open the Render URL.
+## Important limitations
+**This is not a full browser.** Upstream JavaScript, sign-ins, video, interactive apps, and complex sites do not work. Adult/gore filters based on domain names and keywords are *not comprehensive*: they cannot detect all inappropriate material and can occasionally block harmless domains. For dependable category blocking, integrate a maintained classification/DNS service and enforce the policy on every upstream request. Do not rely on this MVP for child-safety guarantees.
 
-Environment options:
-- `ALLOWED_HOSTS`: explicit trusted hostname list
-- `PORT`: injected by Render, defaults to 3000
-- `MAX_BYTES`: maximum upstream response size (default 2097152)
-- `REQUEST_TIMEOUT_MS`: upstream request timeout (default 10000)
+The project should not be exposed as an unrestricted public proxy. Add authorization, edge rate-limiting, abuse monitoring, and deployment controls before widely sharing it.
 
-## Local development
+## Render setup
+1. Create a **Web Service** from this repository (or use Render Blueprint via `render.yaml`).
+2. Build: `npm install`. Start: `npm start`.
+3. Environment setting `BLOCKED_HOSTS` is a comma-separated list of blocked hostname suffixes (e.g. `blocked.example,another-blocked.example`). Blank by default. Do not include schemes.
+4. Deploy or redeploy after configuration changes.
+
+Other options: `PORT` (default 3000), `MAX_BYTES` (default 2097152), `REQUEST_TIMEOUT_MS` (default 10000).
+
+## Local
 ```sh
 npm install
 npm test
 npm start
 ```
-Open http://localhost:3000
 
-## Security notes
-This proxy is deliberately *not* an unrestricted anonymizing proxy or a tool for bypassing site access controls. Do not add localhost, private IPs, or untrusted domains to `ALLOWED_HOSTS`. The service does not send user credentials upstream; the content is fetched by the server and sanitized before display. The server does not persist browsing history. Upstream sites see the server's IP rather than the visitor's IP. Deploy only in compliance with Render and destination-site rules.
-
-## Troubleshooting\n- If Go appears to fail, check the status text beneath the address bar and the message rendered inside the page viewer.\n- By default only `example.com` and `example.org` work. Set `ALLOWED_HOSTS` in Render to permit additional hostnames. Redeploy after editing environment settings.\n- If the about:blank button does not open a tab, allow popups for the EmProx origin. It creates a same-origin, restricted viewer in a new blank tab.\n- Interactive websites do not work with this MVP; no site JavaScript executes.\n\n## Next milestones
-- Better renderer compatibility, tests for redirects and hostile markup
-- Authentication and rate limits for public hosting
-- Favorites/history stored locally on the frontend
-- Optional integration with the EDUrocks frontend
+Open http://localhost:3000.
