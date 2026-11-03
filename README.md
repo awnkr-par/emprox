@@ -30,3 +30,6 @@ npm start
 ```
 
 Open http://localhost:3000.
+
+## v0.4.1 DNS hotfix
+The HTTP client can request DNS results with `all: true`. EmProx now returns the required address records array in that mode. Previously this caused `Invalid IP address: undefined` when opening sites such as YouTube. This fixes the connection-level bug but does not make YouTube's dynamic player compatible: JavaScript fetching, media streaming and login remain unsupported.

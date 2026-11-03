@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseTarget, isPublicAddress, isBlockedHost } from '../lib/targets.js';
+import { parseTarget, isPublicAddress, isBlockedHost, deliverLookupResult } from '../lib/targets.js';
 
 test('allows any normal public hostname',()=>{
   assert.equal(parseTarget('https://en.wikipedia.org/wiki/Main_Page').hostname,'en.wikipedia.org');
@@ -24,4 +24,20 @@ test('rejects private addresses',()=>{
 test('accepts public addresses',()=>{
   for(const ip of ['8.8.8.8','1.1.1.1','2606:4700:4700::1111'])
     assert.equal(isPublicAddress(ip),true);
+});
+
+test('DNS callback returns array when all=true (Node HTTP autoSelectFamily)',()=>{
+  const records=[{address:'8.8.8.8',family:4},{address:'2606:4700:4700::1111',family:6}];
+  deliverLookupResult({all:true},(error,value)=>{
+    assert.equal(error,null);
+    assert.deepEqual(value,records);
+    assert.equal(value[0].address,'8.8.8.8');
+  },records);
+});
+test('DNS callback returns address and family for ordinary lookups',()=>{
+  deliverLookupResult({},(error,address,family)=>{
+    assert.equal(error,null);
+    assert.equal(address,'8.8.8.8');
+    assert.equal(family,4);
+  },[{address:'8.8.8.8',family:4}]);
 });
