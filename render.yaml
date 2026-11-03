@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: emprox
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ALLOWED_HOSTS
+        value: example.com,example.org
