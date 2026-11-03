@@ -1,8 +1,8 @@
 {
   "name": "emprox",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
-  "description": "An allowlisted HTML web proxy and viewer",
+  "description": "JavaScript-capable sandboxed HTML web viewer",
   "type": "module",
   "engines": {
     "node": ">=20"

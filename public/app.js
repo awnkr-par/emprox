@@ -54,7 +54,7 @@ function openBlank(){
   const iframe=doc.createElement('iframe');
   iframe.title='EmProx page';
   iframe.referrerPolicy='no-referrer';
-  iframe.setAttribute('sandbox','allow-same-origin');
+  iframe.setAttribute('sandbox','allow-scripts');
   iframe.style.cssText='border:0;flex:1;width:100%;background:white;';
   iframe.src=new URL(viewerUrl(url),window.location.href).href;
   doc.body.append(bar,iframe);
@@ -69,7 +69,7 @@ document.querySelector('#reload').addEventListener('click',()=>{
   input.value=lastUrl;navigate();
 });
 document.querySelector('#newtab').addEventListener('click',openBlank);
-frame.addEventListener('load',()=>{if(frame.getAttribute('src'))message('Page loaded. Some websites require scripts that this viewer does not run.');});
+frame.addEventListener('load',()=>{if(frame.getAttribute('src'))message('Page loaded. Basic scripts are enabled, but modern sites may still need unsupported APIs.');});
 fetch('/config').then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{
   blockedHosts=data.blockedHosts||[];
   document.querySelector('#hosts').textContent='Public websites are enabled. Adult/gore domain filtering is best-effort.';

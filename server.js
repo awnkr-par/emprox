@@ -29,7 +29,7 @@ function limited(req) {
 const mime = { '.html':'text/html; charset=utf-8', '.css':'text/css; charset=utf-8',
   '.js':'application/javascript; charset=utf-8', '.svg':'image/svg+xml', '.png':'image/png' };
 const uiCsp = "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:; frame-src 'self'; object-src 'none'; base-uri 'none'";
-const pageCsp = "default-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; form-action 'none'; object-src 'none'; base-uri 'none'";
+const pageCsp = "default-src 'none'; script-src 'self' 'unsafe-inline'; connect-src 'none'; worker-src 'none'; frame-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; form-action 'none'; object-src 'none'; base-uri 'none'";
 
 function send(res, code, body, type='text/plain; charset=utf-8', proxied=false) {
   res.writeHead(code, {'Content-Type':type, 'X-Content-Type-Options':'nosniff',
@@ -95,15 +95,17 @@ function rewriteCss(css, base) {
 
 function rewriteHtml(source, base) {
   const $ = load(source, { decodeEntities:true });
-  $('script,iframe,frame,object,embed,form,base,meta[http-equiv],link[rel=preload],link[rel=modulepreload]').remove();
+  $('iframe,frame,object,embed,form,base,meta[http-equiv],link[rel=preload],link[rel=modulepreload]').remove();
   $('*').each((_i, element) => {
     const el = $(element);
     for (const name of Object.keys(element.attribs || {})) {
-      if (name.toLowerCase().startsWith('on') ||
-          ['srcset','ping','integrity','nonce','formaction'].includes(name.toLowerCase())) el.removeAttr(name);
+      if (['srcset','ping','integrity','nonce','formaction'].includes(name.toLowerCase())) el.removeAttr(name);
     }
     if (el.attr('style')) el.attr('style', rewriteCss(el.attr('style'), base));
-    if (el.is('a')) {
+    if (el.is('script')) {
+      if (el.attr('src')) el.attr('src', proxiedUrl(el.attr('src'), base, 'asset'));
+      el.removeAttr('crossorigin');
+    } else if (el.is('a')) {
       el.attr('href', proxiedUrl(el.attr('href'), base));
       el.removeAttr('target'); el.removeAttr('download');
     } else if (el.is('link')) {
@@ -124,7 +126,7 @@ function errorPage(message) {
   return '<!doctype html><html><head><meta charset="utf-8"><title>EmProx — Page error</title></head>'+
     '<body style="font:16px system-ui;padding:2rem;color:#241333;background:#f9f4fd">'+
     '<h2>EmProx could not open this page</h2><p>'+safe+'</p>'+
-    '<p>This viewer only supports public HTML sites not blocked by its content settings, and does not run site JavaScript.</p></body></html>';
+    '<p>This viewer only supports public HTML sites not blocked by its content settings, and supports basic JavaScript in an isolated frame.</p></body></html>';
 }
 
 function staticFile(res, filename) {
@@ -165,6 +167,8 @@ const server = http.createServer(async (req,res) => {
     if (type === 'text/css')
       return send(res,200,rewriteCss(result.body.toString('utf8'),result.url),
         'text/css; charset=utf-8',true);
+    if (['text/javascript','application/javascript','application/x-javascript'].includes(type))
+      return send(res,200,result.body,'application/javascript; charset=utf-8',true);
     if (!type.startsWith('image/') || type === 'image/svg+xml')
       if (!type.startsWith('font/') && !['application/font-woff','application/font-woff2'].includes(type))
         return send(res,415,'Asset type not supported',undefined,true);

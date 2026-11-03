@@ -8,7 +8,7 @@
 <body>
 <main class="shell">
 <header class="header">
-  <div class="brand"><div class="logo">em<span>.</span></div><div><strong>EmProx</strong><small>Browser · v0.2</small></div></div>
+  <div class="brand"><div class="logo">em<span>.</span></div><div><strong>EmProx</strong><small>Browser · v0.4</small></div></div>
   <span class="status"><i></i> Online</span>
 </header>
 <section class="toolbar" aria-label="Browser controls">
@@ -30,11 +30,11 @@
   <h1>Meet <em>EmProx.</em></h1>
   <p>A lightweight, self-hosted web viewer. Browse public pages in a clean new look. Some inappropriate domains are blocked.</p>
   <div class="info" id="hosts">Loading permitted websites…</div>
-  <p class="note">This MVP displays static HTML, stylesheets and images. Interactive websites, sign-ins and scripts aren't supported yet. Content filtering cannot guarantee every adult or graphic site is blocked.</p>
+  <p class="note">This MVP displays static HTML, stylesheets and images. Basic JavaScript runs in an isolated frame. Some sites may still fail. Content filtering cannot guarantee every adult or graphic site is blocked.</p>
 </section>
 <section id="viewport" class="viewport hidden">
   <div class="viewer-head"><span id="current">Page preview</span><button type="button" id="close">✕ Close</button></div>
-  <iframe id="page" title="Proxied page" referrerpolicy="no-referrer" sandbox="allow-same-origin"></iframe>
+  <iframe id="page" title="Proxied page" referrerpolicy="no-referrer" sandbox="allow-scripts"></iframe>
 </section>
 <footer><span>EmProx · Restricted web viewer</span><span>Made for Render</span></footer>
 </main>
