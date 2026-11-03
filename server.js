@@ -114,6 +114,7 @@ function rewriteHtml(source, base) {
       else el.remove();
     } else if (el.attr('href')) el.removeAttr('href');
     for (const attr of ['src','poster','background']) {
+      if (el.is('script') && attr === 'src') continue;
       if (el.attr(attr)) el.attr(attr, proxiedUrl(el.attr(attr), base, 'asset'));
     }
   });
