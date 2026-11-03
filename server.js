@@ -171,7 +171,7 @@ const server = http.createServer(async (req,res) => {
     return send(res,200,result.body,type,true);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Proxy error';
-    const rejected=/allowlist|URL|HTTP\(S\)|ports|Credentials|Host/.test(message);
+    const rejected=/blocked|Only public|URL|HTTP|ports|Credentials|Host/.test(message);
     send(res,rejected?400:502,incomingErrorBody(req,message), 'text/html; charset=utf-8',true);
   }
 });
