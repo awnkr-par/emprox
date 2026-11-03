@@ -33,3 +33,9 @@ Open http://localhost:3000.
 
 ## v0.4.1 DNS hotfix
 The HTTP client can request DNS results with `all: true`. EmProx now returns the required address records array in that mode. Previously this caused `Invalid IP address: undefined` when opening sites such as YouTube. This fixes the connection-level bug but does not make YouTube's dynamic player compatible: JavaScript fetching, media streaming and login remain unsupported.
+
+## v0.5.0
+- Removed top-left EmProx logo/wordmark.
+- Added a persistent dark/light toggle.
+- Improved CSS link recognition, CSS fallback MIME support, font responses and asset request rate limit (50 to 300/minute).
+- Complex sites such as YouTube may still fail because the proxy does not support their dynamic network APIs.

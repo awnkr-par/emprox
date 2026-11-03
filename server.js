@@ -11,7 +11,7 @@ const port = Number(process.env.PORT || 3000);
 const maxBytes = Math.min(Number(process.env.MAX_BYTES) || 2097152, 10485760);
 const timeout = Math.min(Number(process.env.REQUEST_TIMEOUT_MS) || 10000, 30000);
 const rateLimitWindow = 60_000;
-const maxRequestsPerMinute = 50;
+const maxRequestsPerMinute = 300;
 const hits = new Map();
 function limited(req) {
   // No forwarding headers: only trust the immediate network peer.
@@ -109,7 +109,7 @@ function rewriteHtml(source, base) {
       el.attr('href', proxiedUrl(el.attr('href'), base));
       el.removeAttr('target'); el.removeAttr('download');
     } else if (el.is('link')) {
-      if ((el.attr('rel') || '').toLowerCase() === 'stylesheet')
+      if ((el.attr('rel') || '').toLowerCase().split(/\s+/).includes('stylesheet'))
         el.attr('href', proxiedUrl(el.attr('href'), base, 'asset'));
       else el.remove();
     } else if (el.attr('href')) el.removeAttr('href');
@@ -165,13 +165,13 @@ const server = http.createServer(async (req,res) => {
       return send(res,200,rewriteHtml(result.body.toString('utf8'),result.url),
         'text/html; charset=utf-8',true);
     }
-    if (type === 'text/css')
+    if (type === 'text/css' || (result.url.pathname.toLowerCase().endsWith('.css') && ['text/plain','application/octet-stream',''].includes(type)))
       return send(res,200,rewriteCss(result.body.toString('utf8'),result.url),
         'text/css; charset=utf-8',true);
     if (['text/javascript','application/javascript','application/x-javascript'].includes(type))
       return send(res,200,result.body,'application/javascript; charset=utf-8',true);
     if (!type.startsWith('image/') || type === 'image/svg+xml')
-      if (!type.startsWith('font/') && !['application/font-woff','application/font-woff2'].includes(type))
+      if (!type.startsWith('font/') && !['application/font-woff','application/font-woff2','application/octet-stream'].includes(type))
         return send(res,415,'Asset type not supported',undefined,true);
     return send(res,200,result.body,type,true);
   } catch (error) {

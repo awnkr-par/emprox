@@ -77,3 +77,20 @@ fetch('/config').then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{
   document.querySelector('#hosts').textContent='Could not load content filtering settings.';
   message('Configuration unavailable.',true);
 });
+
+const themeButton=document.querySelector('#theme-toggle');
+function applyTheme(theme){
+  const light=theme==='light';
+  document.documentElement.dataset.theme=light?'light':'dark';
+  themeButton.textContent=light?'☾ Dark':'☀ Light';
+  themeButton.setAttribute('aria-label',light?'Switch to dark theme':'Switch to light theme');
+  themeButton.setAttribute('aria-pressed',String(light));
+}
+let savedTheme='dark';
+try{savedTheme=localStorage.getItem('emprox-theme')||'dark';}catch{}
+applyTheme(savedTheme);
+themeButton.addEventListener('click',()=>{
+  const next=document.documentElement.dataset.theme==='dark'?'light':'dark';
+  applyTheme(next);
+  try{localStorage.setItem('emprox-theme',next);}catch{}
+});
