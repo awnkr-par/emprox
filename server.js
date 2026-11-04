@@ -42,9 +42,9 @@ function fetchOne(url) {
   return new Promise((resolve, reject) => {
     const lib = url.protocol === 'https:' ? https : http;
     const request = lib.get(url, {
-      headers: { 'user-agent':'EmProx/0.1 (+self-hosted HTML viewer)',
+      headers: { 'user-agent':'EmProx/0.6 (+self-hosted page viewer)',
         'accept':'text/html,text/css,image/*;q=0.9,*/*;q=0.5',
-        'accept-encoding':'identity' },
+        'accept-encoding':'identity', 'accept-language':'en-US,en;q=0.9' },
       lookup: safeLookup, timeout, maxHeaderSize: 16384
     }, upstream => {
       const chunks = []; let total = 0;
@@ -72,7 +72,12 @@ async function fetchAllowed(raw) {
       url = parseTarget(response.headers.location, url);
       continue;
     }
-    if (response.status !== 200) throw new Error('Upstream HTTP ' + response.status);
+    if (response.status !== 200) {
+      const error = new Error('Upstream HTTP ' + response.status);
+      error.upstreamStatus = response.status;
+      error.upstreamUrl = url.href;
+      throw error;
+    }
     return response;
   }
   throw new Error('Too many redirects');
@@ -122,12 +127,30 @@ function rewriteHtml(source, base) {
   return $.html();
 }
 
-function errorPage(message) {
-  const safe=String(message).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  return '<!doctype html><html><head><meta charset="utf-8"><title>EmProx — Page error</title></head>'+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function errorPage(message, upstreamStatus, upstreamUrl) {
+  const refused = Number.isInteger(upstreamStatus);
+  const heading = refused ? 'The destination declined the request' : 'EmProx could not open this page';
+  const explanation = refused
+    ? 'The destination server returned HTTP ' + upstreamStatus +
+      '. This is not an EmProx blocklist decision. Some sites reject server-side proxies, automated requests, or datacenter IP addresses.'
+    : message;
+  let direct = '';
+  if (refused && upstreamUrl) {
+    try {
+      const url = parseTarget(upstreamUrl);
+      direct = '<p><a href="' + escapeHtml(url.href) +
+        '" target="_blank" rel="noopener noreferrer">Open original website directly</a></p>';
+    } catch {}
+  }
+  return '<!doctype html><html><head><meta charset="utf-8"><title>EmProx — Page error</title>'+
+    '<meta name="viewport" content="width=device-width,initial-scale=1"></head>'+
     '<body style="font:16px system-ui;padding:2rem;color:#241333;background:#f9f4fd">'+
-    '<h2>EmProx could not open this page</h2><p>'+safe+'</p>'+
-    '<p>This viewer only supports public HTML sites not blocked by its content settings, and supports basic JavaScript in an isolated frame.</p></body></html>';
+    '<h2>'+escapeHtml(heading)+'</h2><p>'+escapeHtml(explanation)+'</p>'+direct+
+    '<p>EmProx cannot override a destination server rejection. Direct access opens outside the proxy.</p></body></html>';
 }
 
 function staticFile(res, filename) {
@@ -135,12 +158,6 @@ function staticFile(res, filename) {
   fs.readFile(filepath,(err,contents)=> err
     ? send(res,404,'Not found')
     : send(res,200,contents,mime[path.extname(filename)] || 'application/octet-stream'));
-}
-
-function incomingErrorBody(req,message){
-  try { const url=new URL(req.url,'http://localhost'); if(url.pathname==='/browse')return errorPage(message); }
-  catch {}
-  return errorPage(message);
 }
 
 const server = http.createServer(async (req,res) => {
@@ -177,7 +194,8 @@ const server = http.createServer(async (req,res) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Proxy error';
     const rejected=/blocked|Only public|URL|HTTP|ports|Credentials|Host/.test(message);
-    send(res,rejected?400:502,incomingErrorBody(req,message), 'text/html; charset=utf-8',true);
+    const body=errorPage(message,error.upstreamStatus,error.upstreamUrl);
+    send(res,error.upstreamStatus ? 502 : rejected ? 400 : 502,body,'text/html; charset=utf-8',true);
   }
 });
 server.listen(port,'0.0.0.0',()=>console.log('EmProx listening on',port));

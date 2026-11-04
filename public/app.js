@@ -69,6 +69,13 @@ document.querySelector('#reload').addEventListener('click',()=>{
   input.value=lastUrl;navigate();
 });
 document.querySelector('#newtab').addEventListener('click',openBlank);
+document.querySelector('#open-direct').addEventListener('click',()=>{
+  try {
+    const url=parseInput();
+    const tab=window.open(url.href,'_blank','noopener,noreferrer');
+    if (!tab) message('Your browser may have blocked the new tab.',true);
+  } catch(e) { message(e.message,true); }
+});
 frame.addEventListener('load',()=>{if(frame.getAttribute('src'))message('Page loaded. Basic scripts are enabled, but modern sites may still need unsupported APIs.');});
 fetch('/config').then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{
   blockedHosts=data.blockedHosts||[];

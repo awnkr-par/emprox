@@ -39,3 +39,9 @@ The HTTP client can request DNS results with `all: true`. EmProx now returns the
 - Added a persistent dark/light toggle.
 - Improved CSS link recognition, CSS fallback MIME support, font responses and asset request rate limit (50 to 300/minute).
 - Complex sites such as YouTube may still fail because the proxy does not support their dynamic network APIs.
+
+## v0.6.0: upstream rejection diagnostics
+- Destination HTTP failures (including 418) are distinguished from EmProx policy blocks.
+- A safe direct-site link is displayed for upstream refusals and there is an **Open original site** control in the interface.
+- A more current EmProx User-Agent and Accept-Language header improve basic request compatibility.
+- A 418 is a response from the destination and cannot be fixed by removing the EmProx blocklist. Sites can reject proxy/datacenter requests and may require features this proxy lacks.
