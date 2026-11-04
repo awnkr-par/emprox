@@ -50,3 +50,10 @@ The HTTP client can request DNS results with `all: true`. EmProx now returns the
 A sandbox without `allow-same-origin` gives the document an opaque origin. The previous CSP's `'self'` policy could prevent browser loading of the proxy's own rewritten stylesheets and scripts, including GitHub's CSS bundles. The page CSP now explicitly allows the configured **proxy origin** for CSS, JS, fonts, and images while keeping the isolated script-capable sandbox.
 
 Render automatically sets `RENDER_EXTERNAL_HOSTNAME` for deployed services. On a custom domain, set `PUBLIC_ORIGIN` to that full origin (e.g. `https://proxy.example.com`, no trailing paths). For local development the default is `http://localhost:3000`. Pages whose upstream servers reject Render requests still cannot be displayed reliably.
+
+## v0.8.0: performance and partial-loading improvements
+- Reuse upstream HTTP(S) connections with keep-alive agents to reduce repeated TLS handshakes.
+- Cache successful public CSS, JavaScript, images and fonts in a bounded 24 MiB, ten-minute memory cache. Browser assets can also reuse responses for ten minutes. No HTML or error pages are cached.
+- Increase max upstream body default from 2 MiB to 8 MiB (up to 16 MiB configurable) to avoid cutting off large bundles, and increase the shared request threshold from 300 to 1200 per minute.
+- URL/blocklist/private DNS checks remain in place for every cache miss. Cache clears on restarts.
+- **Not solved:** Modern apps such as GitHub and YouTube rely on fetch/XHR, dynamic modules, service workers, streaming and other APIs that this viewer still does not proxy. A page can appear partially loaded even if all static resources work.

@@ -8,10 +8,10 @@ import { blockedHosts, parseTarget, safeLookup } from './lib/targets.js';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), 'public');
 const port = Number(process.env.PORT || 3000);
-const maxBytes = Math.min(Number(process.env.MAX_BYTES) || 2097152, 10485760);
+const maxBytes = Math.min(Number(process.env.MAX_BYTES) || 8388608, 16777216);
 const timeout = Math.min(Number(process.env.REQUEST_TIMEOUT_MS) || 10000, 30000);
 const rateLimitWindow = 60_000;
-const maxRequestsPerMinute = 300;
+const maxRequestsPerMinute = 1200;
 const hits = new Map();
 function limited(req) {
   // No forwarding headers: only trust the immediate network peer.
@@ -25,6 +25,35 @@ function limited(req) {
   }
   record.count += 1;
   return record.count > maxRequestsPerMinute;
+}
+// Keep upstream sockets warm across CSS, JS and image requests.
+const httpAgent = new http.Agent({ keepAlive: true, maxSockets: 48, maxFreeSockets: 12 });
+const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 48, maxFreeSockets: 12 });
+// Small bounded in-process cache for public static assets only.
+const assetCache = new Map();
+const cacheMaxBytes = 24 * 1024 * 1024;
+const cachePerItemLimit = 2 * 1024 * 1024;
+const cacheTtlMs = 10 * 60 * 1000;
+let cachedBytes = 0;
+function cacheGet(key) {
+  const item = assetCache.get(key);
+  if (!item) return null;
+  if (Date.now() >= item.expires) { assetCache.delete(key); cachedBytes -= item.body.length; return null; }
+  assetCache.delete(key); assetCache.set(key,item);
+  return item;
+}
+function cachePut(key,body,type) {
+  if (!body?.length || body.length > cachePerItemLimit) return;
+  const existing=assetCache.get(key);
+  if(existing){ cachedBytes -= existing.body.length; assetCache.delete(key); }
+  assetCache.set(key,{body,type,expires:Date.now()+cacheTtlMs});
+  cachedBytes += body.length;
+  while(cachedBytes > cacheMaxBytes && assetCache.size){
+    const first=assetCache.keys().next().value;
+    const removed=assetCache.get(first);
+    assetCache.delete(first);
+    cachedBytes -= removed.body.length;
+  }
 }
 const mime = { '.html':'text/html; charset=utf-8', '.css':'text/css; charset=utf-8',
   '.js':'application/javascript; charset=utf-8', '.svg':'image/svg+xml', '.png':'image/png' };
@@ -51,10 +80,10 @@ export function pageContentPolicy(origin = proxyOrigin) {
 }
 const pageCsp = pageContentPolicy();
 
-function send(res, code, body, type='text/plain; charset=utf-8', proxied=false) {
+function send(res, code, body, type='text/plain; charset=utf-8', proxied=false, cacheSeconds=0) {
   res.writeHead(code, {'Content-Type':type, 'X-Content-Type-Options':'nosniff',
     'Referrer-Policy':'no-referrer', 'Content-Security-Policy':proxied?pageCsp:uiCsp,
-    'Cache-Control':'no-store', 'X-Frame-Options':'SAMEORIGIN'});
+    'Cache-Control':cacheSeconds > 0 ? 'public, max-age=' + cacheSeconds : 'no-store', 'X-Frame-Options':'SAMEORIGIN'});
   res.end(body);
 }
 
@@ -65,7 +94,8 @@ function fetchOne(url) {
       headers: { 'user-agent':'EmProx/0.6 (+self-hosted page viewer)',
         'accept':'text/html,text/css,image/*;q=0.9,*/*;q=0.5',
         'accept-encoding':'identity', 'accept-language':'en-US,en;q=0.9' },
-      lookup: safeLookup, timeout, maxHeaderSize: 16384
+      lookup: safeLookup, agent: url.protocol === 'https:' ? httpsAgent : httpAgent,
+      timeout, maxHeaderSize: 16384
     }, upstream => {
       const chunks = []; let total = 0;
       upstream.on('data', chunk => {
@@ -197,7 +227,11 @@ const server = http.createServer(async (req,res) => {
       return send(res,404,'Not found');
     if (limited(req)) return send(res,429,'Request limit reached. Try again shortly.');
     if (!incoming.searchParams.has('url')) return send(res,400,'Missing url');
-    const result = await fetchAllowed(incoming.searchParams.get('url'));
+    const targetUrl=parseTarget(incoming.searchParams.get('url'));
+    const isAsset=incoming.pathname === '/asset';
+    const cached=isAsset ? cacheGet(targetUrl.href) : null;
+    if(cached) return send(res,200,cached.body,cached.type,true,600);
+    const result = await fetchAllowed(targetUrl.href);
     const type = (result.headers['content-type'] || '').split(';')[0].toLowerCase();
     if (incoming.pathname === '/browse') {
       if (type !== 'text/html' && type !== 'application/xhtml+xml')
@@ -206,14 +240,20 @@ const server = http.createServer(async (req,res) => {
         'text/html; charset=utf-8',true);
     }
     if (type === 'text/css' || (result.url.pathname.toLowerCase().endsWith('.css') && ['text/plain','application/octet-stream',''].includes(type)))
-      return send(res,200,rewriteCss(result.body.toString('utf8'),result.url),
-        'text/css; charset=utf-8',true);
-    if (['text/javascript','application/javascript','application/x-javascript'].includes(type))
-      return send(res,200,result.body,'application/javascript; charset=utf-8',true);
+    {
+      const body=Buffer.from(rewriteCss(result.body.toString('utf8'),result.url));
+      cachePut(targetUrl.href,body,'text/css; charset=utf-8');
+      return send(res,200,body,'text/css; charset=utf-8',true,600);
+    }
+    if (['text/javascript','application/javascript','application/x-javascript'].includes(type)) {
+      cachePut(targetUrl.href,result.body,'application/javascript; charset=utf-8');
+      return send(res,200,result.body,'application/javascript; charset=utf-8',true,600);
+    }
     if (!type.startsWith('image/') || type === 'image/svg+xml')
       if (!type.startsWith('font/') && !['application/font-woff','application/font-woff2','application/octet-stream'].includes(type))
         return send(res,415,'Asset type not supported',undefined,true);
-    return send(res,200,result.body,type,true);
+    cachePut(targetUrl.href,result.body,type);
+    return send(res,200,result.body,type,true,600);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Proxy error';
     const rejected=/blocked|Only public|URL|HTTP|ports|Credentials|Host/.test(message);
