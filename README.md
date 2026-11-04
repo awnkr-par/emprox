@@ -1,4 +1,4 @@
-# EmProx
+# emPROx
 
 Self-hosted lightweight HTML page viewer for Render. Version 0.4.0.
 
@@ -32,19 +32,19 @@ npm start
 Open http://localhost:3000.
 
 ## v0.4.1 DNS hotfix
-The HTTP client can request DNS results with `all: true`. EmProx now returns the required address records array in that mode. Previously this caused `Invalid IP address: undefined` when opening sites such as YouTube. This fixes the connection-level bug but does not make YouTube's dynamic player compatible: JavaScript fetching, media streaming and login remain unsupported.
+The HTTP client can request DNS results with `all: true`. emPROx now returns the required address records array in that mode. Previously this caused `Invalid IP address: undefined` when opening sites such as YouTube. This fixes the connection-level bug but does not make YouTube's dynamic player compatible: JavaScript fetching, media streaming and login remain unsupported.
 
 ## v0.5.0
-- Removed top-left EmProx logo/wordmark.
+- Removed top-left emPROx logo/wordmark.
 - Added a persistent dark/light toggle.
 - Improved CSS link recognition, CSS fallback MIME support, font responses and asset request rate limit (50 to 300/minute).
 - Complex sites such as YouTube may still fail because the proxy does not support their dynamic network APIs.
 
 ## v0.6.0: upstream rejection diagnostics
-- Destination HTTP failures (including 418) are distinguished from EmProx policy blocks.
+- Destination HTTP failures (including 418) are distinguished from emPROx policy blocks.
 - A safe direct-site link is displayed for upstream refusals and there is an **Open original site** control in the interface.
-- A more current EmProx User-Agent and Accept-Language header improve basic request compatibility.
-- A 418 is a response from the destination and cannot be fixed by removing the EmProx blocklist. Sites can reject proxy/datacenter requests and may require features this proxy lacks.
+- A more current emPROx User-Agent and Accept-Language header improve basic request compatibility.
+- A 418 is a response from the destination and cannot be fixed by removing the emPROx blocklist. Sites can reject proxy/datacenter requests and may require features this proxy lacks.
 
 ## v0.7.0: broken stylesheets
 A sandbox without `allow-same-origin` gives the document an opaque origin. The previous CSP's `'self'` policy could prevent browser loading of the proxy's own rewritten stylesheets and scripts, including GitHub's CSS bundles. The page CSP now explicitly allows the configured **proxy origin** for CSS, JS, fonts, and images while keeping the isolated script-capable sandbox.
@@ -57,3 +57,7 @@ Render automatically sets `RENDER_EXTERNAL_HOSTNAME` for deployed services. On a
 - Increase max upstream body default from 2 MiB to 8 MiB (up to 16 MiB configurable) to avoid cutting off large bundles, and increase the shared request threshold from 300 to 1200 per minute.
 - URL/blocklist/private DNS checks remain in place for every cache miss. Cache clears on restarts.
 - **Not solved:** Modern apps such as GitHub and YouTube rely on fetch/XHR, dynamic modules, service workers, streaming and other APIs that this viewer still does not proxy. A page can appear partially loaded even if all static resources work.
+
+## v0.8.1: branding
+- Standardize product branding as **emPROx** (not EmProx).
+- Update the footer to **emPROx v0.8.1, OHx1**, replacing the hosting-provider credit.

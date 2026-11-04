@@ -19,7 +19,7 @@ function parseInput(){
     throw new Error('Only regular HTTP(S) URLs are supported.');
   const host=url.hostname.toLowerCase();
   if(blockedHosts.some(domain=>host===domain||host.endsWith('.'+domain)))
-    throw new Error('This domain is blocked by EmProx settings.');
+    throw new Error('This domain is blocked by emPROx settings.');
   return url;
 }
 function viewerUrl(url){return '/browse?url='+encodeURIComponent(url.href);}
@@ -37,7 +37,7 @@ function openBlank(){
   try{url=parseInput();}catch(e){message(e.message,true);return;}
   // Open synchronously from the click. Async popup opening is commonly blocked.
   const tab=window.open('about:blank','_blank');
-  if(!tab){message('Popup blocked: allow popups for EmProx and try again.',true);return;}
+  if(!tab){message('Popup blocked: allow popups for emPROx and try again.',true);return;}
   tab.opener=null;
   const doc=tab.document;
   doc.title='New Tab';
@@ -45,14 +45,14 @@ function openBlank(){
   const bar=doc.createElement('div');
   bar.style.cssText='background:#241338;color:#e6c5fc;padding:12px 16px;font-size:14px;display:flex;align-items:center;gap:12px;';
   const heading=doc.createElement('strong');
-  heading.textContent='EmProx · '+url.hostname;
+  heading.textContent='emPROx · '+url.hostname;
   bar.appendChild(heading);
   const hint=doc.createElement('span');
   hint.style.cssText='font-size:12px;opacity:.7;margin-left:auto;';
   hint.textContent='Restricted page viewer';
   bar.appendChild(hint);
   const iframe=doc.createElement('iframe');
-  iframe.title='EmProx page';
+  iframe.title='emPROx page';
   iframe.referrerPolicy='no-referrer';
   iframe.setAttribute('sandbox','allow-scripts');
   iframe.style.cssText='border:0;flex:1;width:100%;background:white;';

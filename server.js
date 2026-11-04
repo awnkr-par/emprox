@@ -91,7 +91,7 @@ function fetchOne(url) {
   return new Promise((resolve, reject) => {
     const lib = url.protocol === 'https:' ? https : http;
     const request = lib.get(url, {
-      headers: { 'user-agent':'EmProx/0.6 (+self-hosted page viewer)',
+      headers: { 'user-agent':'emPROx/0.6 (+self-hosted page viewer)',
         'accept':'text/html,text/css,image/*;q=0.9,*/*;q=0.5',
         'accept-encoding':'identity', 'accept-language':'en-US,en;q=0.9' },
       lookup: safeLookup, agent: url.protocol === 'https:' ? httpsAgent : httpAgent,
@@ -186,10 +186,10 @@ function escapeHtml(value) {
 }
 function errorPage(message, upstreamStatus, upstreamUrl) {
   const refused = Number.isInteger(upstreamStatus);
-  const heading = refused ? 'The destination declined the request' : 'EmProx could not open this page';
+  const heading = refused ? 'The destination declined the request' : 'emPROx could not open this page';
   const explanation = refused
     ? 'The destination server returned HTTP ' + upstreamStatus +
-      '. This is not an EmProx blocklist decision. Some sites reject server-side proxies, automated requests, or datacenter IP addresses.'
+      '. This is not an emPROx blocklist decision. Some sites reject server-side proxies, automated requests, or datacenter IP addresses.'
     : message;
   let direct = '';
   if (refused && upstreamUrl) {
@@ -199,11 +199,11 @@ function errorPage(message, upstreamStatus, upstreamUrl) {
         '" target="_blank" rel="noopener noreferrer">Open original website directly</a></p>';
     } catch {}
   }
-  return '<!doctype html><html><head><meta charset="utf-8"><title>EmProx — Page error</title>'+
+  return '<!doctype html><html><head><meta charset="utf-8"><title>emPROx — Page error</title>'+
     '<meta name="viewport" content="width=device-width,initial-scale=1"></head>'+
     '<body style="font:16px system-ui;padding:2rem;color:#241333;background:#f9f4fd">'+
     '<h2>'+escapeHtml(heading)+'</h2><p>'+escapeHtml(explanation)+'</p>'+direct+
-    '<p>EmProx cannot override a destination server rejection. Direct access opens outside the proxy.</p></body></html>';
+    '<p>emPROx cannot override a destination server rejection. Direct access opens outside the proxy.</p></body></html>';
 }
 
 function staticFile(res, filename) {
@@ -261,4 +261,4 @@ const server = http.createServer(async (req,res) => {
     send(res,error.upstreamStatus ? 502 : rejected ? 400 : 502,body,'text/html; charset=utf-8',true);
   }
 });
-server.listen(port,'0.0.0.0',()=>console.log('EmProx listening on',port));
+server.listen(port,'0.0.0.0',()=>console.log('emPROx listening on',port));
