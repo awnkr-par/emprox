@@ -45,3 +45,8 @@ The HTTP client can request DNS results with `all: true`. EmProx now returns the
 - A safe direct-site link is displayed for upstream refusals and there is an **Open original site** control in the interface.
 - A more current EmProx User-Agent and Accept-Language header improve basic request compatibility.
 - A 418 is a response from the destination and cannot be fixed by removing the EmProx blocklist. Sites can reject proxy/datacenter requests and may require features this proxy lacks.
+
+## v0.7.0: broken stylesheets
+A sandbox without `allow-same-origin` gives the document an opaque origin. The previous CSP's `'self'` policy could prevent browser loading of the proxy's own rewritten stylesheets and scripts, including GitHub's CSS bundles. The page CSP now explicitly allows the configured **proxy origin** for CSS, JS, fonts, and images while keeping the isolated script-capable sandbox.
+
+Render automatically sets `RENDER_EXTERNAL_HOSTNAME` for deployed services. On a custom domain, set `PUBLIC_ORIGIN` to that full origin (e.g. `https://proxy.example.com`, no trailing paths). For local development the default is `http://localhost:3000`. Pages whose upstream servers reject Render requests still cannot be displayed reliably.

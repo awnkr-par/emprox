@@ -29,7 +29,27 @@ function limited(req) {
 const mime = { '.html':'text/html; charset=utf-8', '.css':'text/css; charset=utf-8',
   '.js':'application/javascript; charset=utf-8', '.svg':'image/svg+xml', '.png':'image/png' };
 const uiCsp = "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:; frame-src 'self'; object-src 'none'; base-uri 'none'";
-const pageCsp = "default-src 'none'; script-src 'self' 'unsafe-inline'; connect-src 'none'; worker-src 'none'; frame-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; form-action 'none'; object-src 'none'; base-uri 'none'";
+// Sandboxed pages have opaque origins: CSP 'self' does not reliably match
+// /asset on the hosting origin. Explicitly authorize only the proxy origin.
+// Render sets RENDER_EXTERNAL_HOSTNAME automatically.
+const configuredOrigin = process.env.PUBLIC_ORIGIN ||
+  (process.env.RENDER_EXTERNAL_HOSTNAME ? 'https://' + process.env.RENDER_EXTERNAL_HOSTNAME : 'http://localhost:' + port);
+const parsedOrigin = new URL(configuredOrigin);
+if (!['https:', 'http:'].includes(parsedOrigin.protocol) ||
+    parsedOrigin.username || parsedOrigin.password || parsedOrigin.pathname !== '/' ||
+    parsedOrigin.search || parsedOrigin.hash) {
+  throw new Error('PUBLIC_ORIGIN must be a plain http(s) origin');
+}
+const proxyOrigin = parsedOrigin.origin;
+export function pageContentPolicy(origin = proxyOrigin) {
+  return "default-src 'none'; " +
+    "script-src " + origin + " 'unsafe-inline'; " +
+    "style-src " + origin + " 'unsafe-inline'; " +
+    "img-src " + origin + " data:; font-src " + origin + " data:; " +
+    "connect-src 'none'; worker-src 'none'; frame-src 'none'; " +
+    "form-action 'none'; object-src 'none'; base-uri 'none'";
+}
+const pageCsp = pageContentPolicy();
 
 function send(res, code, body, type='text/plain; charset=utf-8', proxied=false) {
   res.writeHead(code, {'Content-Type':type, 'X-Content-Type-Options':'nosniff',
@@ -114,8 +134,11 @@ function rewriteHtml(source, base) {
       el.attr('href', proxiedUrl(el.attr('href'), base));
       el.removeAttr('target'); el.removeAttr('download');
     } else if (el.is('link')) {
-      if ((el.attr('rel') || '').toLowerCase().split(/\s+/).includes('stylesheet'))
+      if ((el.attr('rel') || '').toLowerCase().split(/\s+/).includes('stylesheet')) {
         el.attr('href', proxiedUrl(el.attr('href'), base, 'asset'));
+        el.removeAttr('crossorigin');
+        el.removeAttr('integrity');
+      }
       else el.remove();
     } else if (el.attr('href')) el.removeAttr('href');
     for (const attr of ['src','poster','background']) {
