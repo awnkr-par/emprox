@@ -66,3 +66,9 @@ Render automatically sets `RENDER_EXTERNAL_HOSTNAME` for deployed services. On a
 - Navigation and asset links use URL-safe Base64 (`?u=...`) instead of raw `?url=...` query parameters. The server decodes and validates the target with the existing blocklist, DNS, and protocol checks.
 - Old `?url=` links are still accepted for backward compatibility.
 - **This is not encryption or a bypass:** Base64 is reversible and provides no protection against filtering or inspection. Network and security tools can still observe or block the proxy and destination requests. Do not use this to evade school or workplace access rules.
+
+## v0.9.1 — YouTube compatibility path
+- Video links to YouTube watch, shorts, live, and youtu.be open the official embedded player in emPROx, rather than partially rendering YouTube's HTML.
+- YouTube home/search pages show an explicit explanation and direct-site alternative instead of a half-loaded page.
+- The YouTube player accesses YouTube directly. It is not rehosted, proxied, disguised or guaranteed to play; the site, owner, browser or administrator may disable embedding or access. No request is made to bypass those restrictions.
+- Other websites continue to use the original limited HTML proxy.

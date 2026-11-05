@@ -18,3 +18,5 @@
 :root[data-theme="light"] .viewport{border-color:#c8a7dc}
 :root[data-theme="light"] .viewer-head{background:#ede0f7;color:#593672}
 :root[data-theme="light"] footer{color:#806d8a}
+
+.youtube-help{padding:clamp(25px,5vw,60px);color:#342148;font:16px/1.7 system-ui;background:#fbf7ff;flex:1}.youtube-help h2{font-size:clamp(22px,3vw,32px);line-height:1.2;margin:0 0 16px}.youtube-help p{max-width:620px}.viewport #youtube-player{background:#000}

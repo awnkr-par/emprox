@@ -1,8 +1,11 @@
+import {youtubeVideoId,isYouTube} from '/youtube.js';
 const form=document.querySelector('#navigate');
 const input=document.querySelector('#url');
 const welcome=document.querySelector('#welcome');
 const viewport=document.querySelector('#viewport');
 const frame=document.querySelector('#page');
+const player=document.querySelector('#youtube-player');
+const youtubeHelp=document.querySelector('#youtube-help');
 const current=document.querySelector('#current');
 const status=document.querySelector('#message');
 let lastUrl=null;
@@ -29,18 +32,36 @@ function encodeUrl(raw){
   return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 }
 function viewerUrl(url){return '/browse?u='+encodeUrl(url.href);}
+function resetPageViews(){frame.classList.add('hidden');frame.removeAttribute('src');player.classList.add('hidden');player.removeAttribute('src');youtubeHelp.classList.add('hidden');}
 function navigate(){
   try{
     const url=parseInput();lastUrl=url.href;input.value=url.href;
-    frame.src=viewerUrl(url);current.textContent='Viewing '+url.hostname;
+    resetPageViews();
     welcome.classList.add('hidden');viewport.classList.remove('hidden');
+    if(isYouTube(url)){
+      const id=youtubeVideoId(url);
+      if(id){
+        player.src='https://www.youtube.com/embed/'+encodeURIComponent(id);
+        player.classList.remove('hidden');
+        current.textContent='Official YouTube embedded player';
+        message('Using YouTube’s official player. Playback depends on the video and network permissions.');
+      }else{
+        youtubeHelp.classList.remove('hidden');
+        current.textContent='YouTube · Official site required';
+        message('YouTube browsing is not supported by this proxy. Open the original site.',true);
+      }
+      return;
+    }
+    frame.classList.remove('hidden');
+    frame.src=viewerUrl(url);current.textContent='Viewing '+url.hostname;
     message('Loading '+url.hostname+'…');
   }catch(e){message(e.message,true);}
 }
-function home(){frame.removeAttribute('src');viewport.classList.add('hidden');welcome.classList.remove('hidden');message('Ready to browse');}
+function home(){resetPageViews();viewport.classList.add('hidden');welcome.classList.remove('hidden');message('Ready to browse');}
 function openBlank(){
   let url;
   try{url=parseInput();}catch(e){message(e.message,true);return;}
+  if(isYouTube(url)){message('Use Go for the official YouTube player, or Open original site for browsing.',true);return;}
   // Open synchronously from the click. Async popup opening is commonly blocked.
   const tab=window.open('about:blank','_blank');
   if(!tab){message('Popup blocked: allow popups for emPROx and try again.',true);return;}
@@ -82,7 +103,7 @@ document.querySelector('#open-direct').addEventListener('click',()=>{
     if (!tab) message('Your browser may have blocked the new tab.',true);
   } catch(e) { message(e.message,true); }
 });
-frame.addEventListener('load',()=>{if(frame.getAttribute('src'))message('Page loaded. Basic scripts are enabled, but modern sites may still need unsupported APIs.');});
+frame.addEventListener('load',()=>{if(frame.getAttribute('src'))message('Static page loaded. Interactive features may require unsupported APIs.');});
 fetch('/config').then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{
   blockedHosts=data.blockedHosts||[];
   document.querySelector('#hosts').textContent='Public websites are enabled. Adult/gore domain filtering is best-effort.';
