@@ -58,7 +58,7 @@ function cachePut(key,body,type) {
 }
 const mime = { '.html':'text/html; charset=utf-8', '.css':'text/css; charset=utf-8',
   '.js':'application/javascript; charset=utf-8', '.svg':'image/svg+xml', '.png':'image/png' };
-const uiCsp = "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:; frame-src 'self'; object-src 'none'; base-uri 'none'";
+const uiCsp = "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:; frame-src 'self' https://www.youtube.com; object-src 'none'; base-uri 'none'";
 // Sandboxed pages have opaque origins: CSP 'self' does not reliably match
 // /asset on the hosting origin. Explicitly authorize only the proxy origin.
 // Render sets RENDER_EXTERNAL_HOSTNAME automatically.
@@ -224,6 +224,7 @@ const server = http.createServer(async (req,res) => {
     if (incoming.pathname === '/') return staticFile(res,'index.html');
     if (incoming.pathname === '/style.css') return staticFile(res,'style.css');
     if (incoming.pathname === '/app.js') return staticFile(res,'app.js');
+    if (incoming.pathname === '/youtube.js') return staticFile(res,'youtube.js');
     if (incoming.pathname !== '/browse' && incoming.pathname !== '/asset')
       return send(res,404,'Not found');
     if (limited(req)) return send(res,429,'Request limit reached. Try again shortly.');

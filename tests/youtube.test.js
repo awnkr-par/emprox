@@ -12,3 +12,12 @@ test('does not treat lookalike domains or malformed video IDs as videos',()=>{
   }
   assert.equal(isYouTube(new URL('https://youtube.com.evil.example')),false);
 });
+
+test('host UI explicitly allows YouTube official embeds and serves helper',()=>{
+  // Keep the iframe provider policy and frontend module route in sync.
+  return import('node:fs').then(fs=>{
+    const source=fs.readFileSync(new URL('../server.js',import.meta.url),'utf8');
+    assert.match(source,/frame-src 'self' https:\/\/www\.youtube\.com/);
+    assert.match(source,/incoming\.pathname === '\/youtube\.js'/);
+  });
+});
