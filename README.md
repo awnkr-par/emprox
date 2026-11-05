@@ -61,3 +61,8 @@ Render automatically sets `RENDER_EXTERNAL_HOSTNAME` for deployed services. On a
 ## v0.8.1: branding
 - Standardize product branding as **emPROx** (not EmProx).
 - Update the footer to **emPROx v0.8.1, OHx1**, replacing the hosting-provider credit.
+
+## v0.9.0: encoded URL routing
+- Navigation and asset links use URL-safe Base64 (`?u=...`) instead of raw `?url=...` query parameters. The server decodes and validates the target with the existing blocklist, DNS, and protocol checks.
+- Old `?url=` links are still accepted for backward compatibility.
+- **This is not encryption or a bypass:** Base64 is reversible and provides no protection against filtering or inspection. Network and security tools can still observe or block the proxy and destination requests. Do not use this to evade school or workplace access rules.

@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { load } from 'cheerio';
 import { blockedHosts, parseTarget, safeLookup } from './lib/targets.js';
+import { encodeUrl, getTargetParam } from './lib/url-codec.js';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), 'public');
 const port = Number(process.env.PORT || 3000);
@@ -135,7 +136,7 @@ async function fetchAllowed(raw) {
 
 function proxiedUrl(raw, base, kind='browse') {
   if (!raw || raw.startsWith('#')) return '#';
-  try { return '/' + kind + '?url=' + encodeURIComponent(parseTarget(raw, base).href); }
+  try { return '/' + kind + '?u=' + encodeUrl(parseTarget(raw, base).href); }
   catch { return '#'; }
 }
 
@@ -226,8 +227,7 @@ const server = http.createServer(async (req,res) => {
     if (incoming.pathname !== '/browse' && incoming.pathname !== '/asset')
       return send(res,404,'Not found');
     if (limited(req)) return send(res,429,'Request limit reached. Try again shortly.');
-    if (!incoming.searchParams.has('url')) return send(res,400,'Missing url');
-    const targetUrl=parseTarget(incoming.searchParams.get('url'));
+    const targetUrl=parseTarget(getTargetParam(incoming.searchParams));
     const isAsset=incoming.pathname === '/asset';
     const cached=isAsset ? cacheGet(targetUrl.href) : null;
     if(cached) return send(res,200,cached.body,cached.type,true,600);

@@ -22,7 +22,13 @@ function parseInput(){
     throw new Error('This domain is blocked by emPROx settings.');
   return url;
 }
-function viewerUrl(url){return '/browse?url='+encodeURIComponent(url.href);}
+function encodeUrl(raw){
+  const bytes=new TextEncoder().encode(raw);
+  let binary='';
+  for(const byte of bytes) binary+=String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function viewerUrl(url){return '/browse?u='+encodeUrl(url.href);}
 function navigate(){
   try{
     const url=parseInput();lastUrl=url.href;input.value=url.href;
